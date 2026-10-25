@@ -173,6 +173,10 @@ input[type="file"]#imageInput{display:none;}
         <input type="file" id="imageInput" accept="image/*">
       </div>
 
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost" id="btnPaste" style="flex:1;min-width:120px;font-size:0.85rem;">📋 Ctrl+V でペースト</button>
+      </div>
+
       <div class="image-preview" id="imagePreview">
         <img id="previewImg" alt="プレビュー">
         <div class="extraction-controls">
@@ -321,6 +325,36 @@ function setupImageUpload(){
 
   document.getElementById('btnExtract').onclick=extractFromImage;
   document.getElementById('btnClearImage').onclick=clearImage;
+  document.getElementById('btnPaste').onclick=pasteFromClipboard;
+
+  document.addEventListener('paste',function(e){
+    var uploadArea=document.getElementById('uploadArea');
+    if(uploadArea.offsetParent!==null){
+      e.preventDefault();
+      pasteFromClipboard();
+    }
+  });
+}
+
+async function pasteFromClipboard(){
+  try{
+    var items=await navigator.clipboard.read();
+    var imageItem=items.find(item=>item.types.some(t=>t.startsWith('image/')));
+
+    if(!imageItem){
+      alert('クリップボードに画像がありません');
+      return;
+    }
+
+    var imageType=imageItem.types.find(t=>t.startsWith('image/'));
+    var blob=await imageItem.getType(imageType);
+
+    var file=new File([blob],'clipboard-image.png',{type:imageType});
+    handleImageSelect(file);
+  }catch(err){
+    console.error('クリップボード読み込みエラー:',err);
+    alert('クリップボードからの画像読み込みに失敗しました。ファイル選択またはドラッグ&ドロップをお試しください。');
+  }
 }
 
 function handleImageSelect(file){
