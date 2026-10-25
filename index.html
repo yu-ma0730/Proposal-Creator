@@ -237,6 +237,28 @@ input[type="file"]#imageInput{display:none;}
         <textarea id="myApproach" rows="2" placeholder="例：迅速な実装、ユーザーヒアリングを重視、既存システムの効率化提案 など"></textarea>
       </div>
 
+      <div style="font-size:0.85rem;font-weight:700;color:var(--primary);margin-top:16px;">🎯 提案のジャンル（オプション）</div>
+
+      <div class="field">
+        <label>ジャンル選択</label>
+        <select id="genreSelect" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:0.88rem;padding:10px 12px;transition:border-color 0.2s;width:100%;">
+          <option value="">--- ジャンルを選択 ---</option>
+          <option value="blog">ブログ・記事執筆</option>
+          <option value="youtube">YouTube動画（台本）</option>
+          <option value="sns">SNS投稿</option>
+          <option value="website">Webサイト制作</option>
+          <option value="system">システム開発</option>
+          <option value="marketing">マーケティング企画</option>
+          <option value="design">グラフィックデザイン</option>
+          <option value="consulting">コンサルティング</option>
+        </select>
+      </div>
+
+      <!-- ジャンル別詳細フィールド -->
+      <div id="genreDetailsContainer" style="display:none;margin-top:16px;padding:16px;background:var(--bg);border-radius:8px;border-left:4px solid var(--primary);">
+        <div id="genreDetailsFields"></div>
+      </div>
+
       <p class="err" id="err2">※ 必須項目を入力してください</p>
       <button class="btn btn-primary" id="btn2">次へ →</button>
       <hr class="divider">
@@ -289,8 +311,86 @@ input[type="file"]#imageInput{display:none;}
 <script>
 var apiKey='',clientBusiness='',clientRequirement='',clientBudget='',clientPeriod='';
 var myExperience='',myAchievements='',myApproach='';
+var selectedGenre='',genreDetails={};
 var proposals=[],currentProposal=0;
 var selectedImage=null;
+
+// ジャンル定義
+var genreConfig={
+  'blog':{name:'ブログ・記事執筆',fields:[
+    {id:'blogTarget',label:'対象読者',placeholder:'例：マーケティング担当者、中小企業経営者 など'},
+    {id:'blogPurpose',label:'記事の目的',placeholder:'例：情報提供、SEO対策、リード獲得 など'}
+  ]},
+  'youtube':{name:'YouTube動画（台本）',fields:[
+    {id:'videoLength',label:'動画の長さ',placeholder:'例：3分、10分、20分 など'},
+    {id:'videoAudience',label:'ターゲット視聴者層',placeholder:'例：初心者向け、プロ向け、全般層 など'},
+    {id:'videoStyle',label:'動画のスタイル',placeholder:'例：教育的、エンタメ性重視、混合型 など'}
+  ]},
+  'sns':{name:'SNS投稿',fields:[
+    {id:'snsPlatform',label:'投稿プラットフォーム',placeholder:'例：Twitter、Instagram、LinkedIn など'},
+    {id:'snsFrequency',label:'投稿頻度',placeholder:'例：毎日、週2回、週1回 など'}
+  ]},
+  'website':{name:'Webサイト制作',fields:[
+    {id:'sitePurpose',label:'サイトの目的',placeholder:'例：企業サイト、ECサイト、ポートフォリオ など'},
+    {id:'siteFeatures',label:'主要機能',placeholder:'例：EC機能、会員管理、ブログシステム など'}
+  ]},
+  'system':{name:'システム開発',fields:[
+    {id:'techStack',label:'技術スタック',placeholder:'例：React、Node.js、AWS、PostgreSQL など'},
+    {id:'scalability',label:'スケーラビリティ要件',placeholder:'例：1000ユーザー想定、高負荷対応 など'}
+  ]},
+  'marketing':{name:'マーケティング企画',fields:[
+    {id:'campaignPeriod',label:'施策期間',placeholder:'例：3ヶ月、半年、1年 など'},
+    {id:'targetKPI',label:'目標KPI',placeholder:'例：売上3倍、認知度50%向上 など'}
+  ]},
+  'design':{name:'グラフィックデザイン',fields:[
+    {id:'designStyle',label:'デザインのスタイル',placeholder:'例：モダン、和風、ミニマル、ポップ など'},
+    {id:'designUse',label:'用途',placeholder:'例：名刺、パンフレット、SNSバナー、ロゴ など'}
+  ]},
+  'consulting':{name:'コンサルティング',fields:[
+    {id:'consultingField',label:'コンサルティング分野',placeholder:'例：経営戦略、マーケティング、組織開発 など'},
+    {id:'expectedResult',label:'期待される成果',placeholder:'例：売上向上、組織効率化、戦略立案 など'}
+  ]}
+};
+
+// ===== ジャンル選択処理 =====
+function setupGenreSelect(){
+  var genreSelect=document.getElementById('genreSelect');
+  genreSelect.onchange=function(){
+    var selected=this.value;
+    if(!selected){
+      document.getElementById('genreDetailsContainer').style.display='none';
+      selectedGenre='';
+      genreDetails={};
+      return;
+    }
+    selectedGenre=selected;
+    renderGenreFields(selected);
+  };
+}
+
+function renderGenreFields(genre){
+  var config=genreConfig[genre];
+  if(!config)return;
+
+  var container=document.getElementById('genreDetailsFields');
+  container.innerHTML='';
+
+  config.fields.forEach(function(field){
+    var div=document.createElement('div');
+    div.className='field';
+    div.style.marginBottom='12px';
+    div.innerHTML='<label>'+field.label+'</label>'
+      +'<input type="text" class="genre-field" data-id="'+field.id+'" placeholder="'+field.placeholder+'" style="background:var(--white);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:\'Noto Sans JP\',sans-serif;font-size:0.88rem;padding:10px 12px;width:100%;">';
+    container.appendChild(div);
+
+    var input=div.querySelector('input');
+    input.onchange=function(){
+      genreDetails[field.id]=this.value;
+    };
+  });
+
+  document.getElementById('genreDetailsContainer').style.display='block';
+}
 
 // ===== 画像アップロード処理 =====
 function setupImageUpload(){
@@ -534,6 +634,16 @@ document.getElementById('btn2').onclick=function(){
   clientPeriod=document.getElementById('clientPeriod').value.trim();
   myExperience=e;myAchievements=document.getElementById('myAchievements').value.trim();
   myApproach=document.getElementById('myApproach').value.trim();
+
+  // ジャンル詳細フィールドの値を読み込む
+  var genreFields=document.querySelectorAll('.genre-field');
+  genreDetails={};
+  genreFields.forEach(function(field){
+    var id=field.getAttribute('data-id');
+    var val=field.value.trim();
+    if(val)genreDetails[id]=val;
+  });
+
   document.getElementById('err2').style.display='none';
   goTo(3);
   generateProposals();
@@ -542,6 +652,36 @@ document.getElementById('btn2').onclick=function(){
 async function generateProposals(){
   document.getElementById('loading').classList.add('show');
   document.getElementById('btn3').style.display='none';
+
+  // ジャンル情報をプロンプトに含める
+  var genreInfo='';
+  if(selectedGenre){
+    var genreLabel=genreConfig[selectedGenre].name;
+    genreInfo='【提案のジャンル】\n'+genreLabel+'\n';
+    if(Object.keys(genreDetails).length>0){
+      genreInfo+='詳細情報：\n';
+      for(var key in genreDetails){
+        var config=genreConfig[selectedGenre].fields.find(function(f){return f.id===key;});
+        if(config){
+          genreInfo+=config.label+'：'+genreDetails[key]+'\n';
+        }
+      }
+      genreInfo+='\n';
+    }
+  }
+
+  var patternRules='【生成ルール】\n'
+    +'5つのパターンを異なるアプローチで生成してください：\n'
+    +'1. 強み重視型：あなたの強みを最初に打ち出す\n'
+    +'2. 課題解決型：クライアントの課題を深掘りして解決策を提示\n'
+    +'3. 実績重視型：具体的な成功事例を活用\n'
+    +'4. 信頼構築型：長期的なパートナーシップを提案\n'
+    +'5. カスタマイズ重視型：クライアント特有のニーズに特化\n';
+
+  if(selectedGenre){
+    patternRules+='上記5パターンは、'+genreConfig[selectedGenre].name+'のジャンルに特化した内容としてください。\n';
+  }
+
   var prompt='以下の情報に基づいて、クライアントに提出する提案文を5パターン生成してください。\n\n'
     +'【クライアント情報】\n'
     +'事業内容：'+clientBusiness+'\n'
@@ -552,13 +692,8 @@ async function generateProposals(){
     +'経験：'+myExperience+'\n'
     +'実績：'+myAchievements+'\n'
     +'得意なアプローチ：'+myApproach+'\n\n'
-    +'【生成ルール】\n'
-    +'5つのパターンを異なるアプローチで生成してください：\n'
-    +'1. 強み重視型：あなたの強みを最初に打ち出す\n'
-    +'2. 課題解決型：クライアントの課題を深掘りして解決策を提示\n'
-    +'3. 実績重視型：具体的な成功事例を活用\n'
-    +'4. 信頼構築型：長期的なパートナーシップを提案\n'
-    +'5. カスタマイズ重視型：クライアント特有のニーズに特化\n\n'
+    +genreInfo
+    +patternRules+'\n'
     +'以下のJSON形式で返してください：\n'
     +'[\n'
     +'  {\n'
@@ -711,6 +846,7 @@ window.onload=function(){
   var saved=localStorage.getItem('apiKey');
   if(saved)document.getElementById('apiKey').value=saved;
   setupImageUpload();
+  setupGenreSelect();
 };
 </script>
 </body>
