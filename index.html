@@ -149,8 +149,6 @@ input[type="file"]#imageInput{display:none;}
       </div>
       <p class="err" id="err1">※ APIキーを入力してください</p>
       <button class="btn btn-primary" id="btn1">次へ →</button>
-      <hr class="divider" style="margin-top:16px;">
-      <button class="btn btn-secondary" id="btnProfileManager" style="margin-top:12px;">👤 プロフィール管理</button>
     </div>
   </div>
 
@@ -164,11 +162,54 @@ input[type="file"]#imageInput{display:none;}
 
       <div style="font-size:0.85rem;font-weight:700;color:var(--primary);margin-top:16px;">💼 プロフィール選択</div>
 
-      <div class="field" style="margin-bottom:12px;">
-        <label>保存済みプロフィール</label>
-        <select id="profileSelect" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:0.88rem;padding:10px 12px;transition:border-color 0.2s;width:100%;">
-          <option value="">--- プロフィールを選択 ---</option>
-        </select>
+      <!-- プロフィール選択タブ -->
+      <div class="proposal-tabs" id="profileTabs" style="margin-bottom:16px;">
+        <button class="tab-btn active" data-tab="tab-existing" onclick="switchProfileTab('tab-existing')">📋 保存済み</button>
+        <button class="tab-btn" data-tab="tab-create" onclick="switchProfileTab('tab-create')">➕ 新規作成</button>
+        <button class="tab-btn" data-tab="tab-manual" onclick="switchProfileTab('tab-manual')">✏️ 手動入力</button>
+      </div>
+
+      <!-- 保存済みプロフィール -->
+      <div id="tab-existing" class="profile-tab-content" style="display:block;">
+        <div class="field" style="margin-bottom:12px;">
+          <label>保存済みプロフィール</label>
+          <select id="profileSelect" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:0.88rem;padding:10px 12px;transition:border-color 0.2s;width:100%;">
+            <option value="">--- プロフィールを選択 ---</option>
+          </select>
+        </div>
+        <div id="profileActions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>
+      </div>
+
+      <!-- 新規作成プロフィール -->
+      <div id="tab-create" class="profile-tab-content" style="display:none;background:var(--bg);border-radius:8px;padding:14px;border-left:4px solid var(--primary);">
+        <div class="field" style="margin-bottom:12px;">
+          <label>プロフィール名 *</label>
+          <input type="text" id="newProfileName" placeholder="例：Web開発者、ライター など" style="width:100%;">
+        </div>
+
+        <div class="field" style="margin-bottom:12px;">
+          <label>経験・得意分野 *</label>
+          <textarea id="newProfileExperience" rows="2" placeholder="例：営業支援ツール開発5年、React・Node.js経験 など" style="width:100%;"></textarea>
+        </div>
+
+        <div class="field" style="margin-bottom:12px;">
+          <label>実績・成果事例</label>
+          <textarea id="newProfileAchievements" rows="2" placeholder="例：月間100万ユーザーのサービス開発 など" style="width:100%;"></textarea>
+        </div>
+
+        <div class="field" style="margin-bottom:12px;">
+          <label>得意なアプローチ</label>
+          <textarea id="newProfileApproach" rows="2" placeholder="例：迅速な実装、ユーザーヒアリングを重視 など" style="width:100%;"></textarea>
+        </div>
+
+        <button class="btn btn-secondary" id="btnCreateProfile" style="width:100%;margin-top:8px;">💾 プロフィールを保存</button>
+      </div>
+
+      <!-- 手動入力（プロフィール選択なし） -->
+      <div id="tab-manual" class="profile-tab-content" style="display:none;">
+        <div style="background:#f0f9ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;font-size:0.8rem;color:var(--primary);margin-bottom:12px;">
+          💡 プロフィール機能を使わずに、下記フィールドに直接入力してください
+        </div>
       </div>
 
       <!-- 画像からの自動抽出セクション -->
@@ -319,56 +360,6 @@ input[type="file"]#imageInput{display:none;}
     </div>
   </div>
 
-  <!-- プロフィール管理モーダル -->
-  <div id="profileModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-    <div style="background:var(--white);border-radius:12px;padding:24px 20px;max-width:500px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-        <div class="card-title" style="margin:0;flex:1;text-align:left;">👤 プロフィール管理</div>
-        <button id="btnCloseModal" style="background:transparent;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted);">✕</button>
-      </div>
-
-      <!-- プロフィール一覧 -->
-      <div id="profileList" style="margin-bottom:20px;border:1px solid var(--border);border-radius:8px;max-height:300px;overflow-y:auto;">
-        <div id="profileItems" style="padding:12px;"></div>
-      </div>
-
-      <!-- プロフィール作成・編集フォーム -->
-      <div id="profileForm" style="display:none;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;background:var(--bg);">
-        <div style="font-weight:700;color:var(--primary);margin-bottom:12px;" id="formTitle">新規プロフィール作成</div>
-
-        <div class="field" style="margin-bottom:12px;">
-          <label>プロフィール名 *</label>
-          <input type="text" id="profileName" placeholder="例：Web開発者、ライター など" style="background:var(--white);">
-        </div>
-
-        <div class="field" style="margin-bottom:12px;">
-          <label>経験・得意分野 *</label>
-          <textarea id="profileExperience" rows="2" placeholder="例：営業支援ツール開発5年、React・Node.js経験 など" style="background:var(--white);"></textarea>
-        </div>
-
-        <div class="field" style="margin-bottom:12px;">
-          <label>実績・成果事例</label>
-          <textarea id="profileAchievements" rows="2" placeholder="例：月間100万ユーザーのサービス開発 など" style="background:var(--white);"></textarea>
-        </div>
-
-        <div class="field" style="margin-bottom:12px;">
-          <label>得意なアプローチ</label>
-          <textarea id="profileApproach" rows="2" placeholder="例：迅速な実装、ユーザーヒアリングを重視 など" style="background:var(--white);"></textarea>
-        </div>
-
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-primary" id="btnSaveProfile" style="flex:1;min-width:100px;">💾 保存</button>
-          <button class="btn btn-ghost" id="btnCancelProfile" style="flex:1;min-width:100px;">キャンセル</button>
-        </div>
-      </div>
-
-      <!-- アクションボタン -->
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-secondary" id="btnAddProfile" style="flex:1;min-width:100px;">➕ 新規作成</button>
-        <button class="btn btn-ghost" id="btnCloseProfileModal" style="flex:1;min-width:100px;">閉じる</button>
-      </div>
-    </div>
-  </div>
 
 </div>
 
@@ -428,13 +419,13 @@ function loadProfiles(){
     }
   }
   updateProfileSelect();
-  renderProfileList();
+  updateProfileActions();
 }
 
 function saveProfiles(){
   localStorage.setItem('profiles',JSON.stringify(profiles));
   updateProfileSelect();
-  renderProfileList();
+  updateProfileActions();
 }
 
 function updateProfileSelect(){
@@ -450,109 +441,88 @@ function updateProfileSelect(){
   select.value=currentVal;
 }
 
-function renderProfileList(){
-  var container=document.getElementById('profileItems');
+function updateProfileActions(){
+  var container=document.getElementById('profileActions');
   if(profiles.length===0){
-    container.innerHTML='<div style="color:var(--muted);font-size:0.85rem;text-align:center;padding:16px;">保存済みプロフィールがありません</div>';
+    container.innerHTML='';
     return;
   }
 
-  var html='';
-  profiles.forEach(function(p,i){
-    html+='<div style="padding:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">'
-      +'<div>'
-      +'<div style="font-weight:700;color:var(--primary);font-size:0.85rem;">'+p.name+'</div>'
-      +'<div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">経験：'+p.experience.substring(0,30)+'...</div>'
-      +'</div>'
-      +'<div style="display:flex;gap:6px;">'
-      +'<button class="action-btn" onclick="editProfile('+i+')" style="padding:6px 8px;font-size:0.75rem;">✏️ 編集</button>'
-      +'<button class="action-btn" onclick="deleteProfile('+i+')" style="padding:6px 8px;font-size:0.75rem;color:var(--warning);">🗑️ 削除</button>'
-      +'</div>'
-      +'</div>';
-  });
+  var select=document.getElementById('profileSelect');
+  var idx=select.value;
+  if(idx===''){
+    container.innerHTML='';
+    return;
+  }
+
+  var html='<button class="btn btn-ghost" onclick="editSelectedProfile()" style="flex:1;min-width:100px;padding:10px;font-size:0.85rem;">✏️ 編集</button>'
+    +'<button class="btn btn-ghost" onclick="deleteSelectedProfile()" style="flex:1;min-width:100px;padding:10px;font-size:0.85rem;color:var(--warning);">🗑️ 削除</button>';
   container.innerHTML=html;
 }
 
-function showProfileForm(){
-  document.getElementById('profileForm').style.display='block';
-  document.getElementById('btnAddProfile').style.display='none';
-  document.getElementById('profileName').value='';
-  document.getElementById('profileExperience').value='';
-  document.getElementById('profileAchievements').value='';
-  document.getElementById('profileApproach').value='';
-  currentEditingProfileId=null;
-  document.getElementById('formTitle').textContent='新規プロフィール作成';
-}
-
-function hideProfileForm(){
-  document.getElementById('profileForm').style.display='none';
-  document.getElementById('btnAddProfile').style.display='block';
-  currentEditingProfileId=null;
-}
-
-function editProfile(idx){
-  var p=profiles[idx];
-  document.getElementById('profileName').value=p.name;
-  document.getElementById('profileExperience').value=p.experience;
-  document.getElementById('profileAchievements').value=p.achievements;
-  document.getElementById('profileApproach').value=p.approach;
-  currentEditingProfileId=idx;
-  document.getElementById('formTitle').textContent='プロフィール編集';
-  document.getElementById('profileForm').style.display='block';
-  document.getElementById('btnAddProfile').style.display='none';
-}
-
-function saveProfile(){
-  var name=document.getElementById('profileName').value.trim();
-  var exp=document.getElementById('profileExperience').value.trim();
-  if(!name||!exp){alert('プロフィール名と経験・得意分野は必須です');return;}
-
-  var profile={
-    name:name,
-    experience:exp,
-    achievements:document.getElementById('profileAchievements').value.trim(),
-    approach:document.getElementById('profileApproach').value.trim()
-  };
-
-  if(currentEditingProfileId!==null){
-    profiles[currentEditingProfileId]=profile;
-  }else{
-    profiles.push(profile);
+function editSelectedProfile(){
+  var select=document.getElementById('profileSelect');
+  var idx=select.value;
+  if(idx===''){
+    alert('プロフィールを選択してください');
+    return;
   }
 
-  saveProfiles();
-  hideProfileForm();
-  alert('プロフィールを保存しました');
+  var p=profiles[idx];
+  document.getElementById('newProfileName').value=p.name;
+  document.getElementById('newProfileExperience').value=p.experience;
+  document.getElementById('newProfileAchievements').value=p.achievements;
+  document.getElementById('newProfileApproach').value=p.approach;
+  currentEditingProfileId=idx;
+  switchProfileTab('tab-create');
+  document.getElementById('btnCreateProfile').textContent='💾 プロフィールを更新';
 }
 
-function deleteProfile(idx){
+function deleteSelectedProfile(){
+  var select=document.getElementById('profileSelect');
+  var idx=select.value;
+  if(idx===''){
+    alert('プロフィールを選択してください');
+    return;
+  }
+
   if(!confirm('このプロフィールを削除してもよろしいですか？')){return;}
   profiles.splice(idx,1);
   saveProfiles();
+  select.value='';
+  updateProfileActions();
   alert('プロフィールを削除しました');
 }
 
-function openProfileModal(){
-  document.getElementById('profileModal').style.display='flex';
-  loadProfiles();
-  hideProfileForm();
-}
+function switchProfileTab(tabName){
+  var tabs=document.querySelectorAll('.profile-tab-content');
+  tabs.forEach(function(t){t.style.display='none';});
+  document.getElementById(tabName).style.display='block';
 
-function closeProfileModal(){
-  document.getElementById('profileModal').style.display='none';
-  hideProfileForm();
-}
+  var buttons=document.querySelectorAll('#profileTabs .tab-btn');
+  buttons.forEach(function(b){
+    if(b.getAttribute('data-tab')===tabName){
+      b.classList.add('active');
+    }else{
+      b.classList.remove('active');
+    }
+  });
 
-document.getElementById('btnProfileManager').onclick=openProfileModal;
-document.getElementById('btnCloseModal').onclick=closeProfileModal;
-document.getElementById('btnCloseProfileModal').onclick=closeProfileModal;
-document.getElementById('btnAddProfile').onclick=showProfileForm;
-document.getElementById('btnCancelProfile').onclick=hideProfileForm;
-document.getElementById('btnSaveProfile').onclick=saveProfile;
+  if(tabName==='tab-create'){
+    if(currentEditingProfileId===null){
+      document.getElementById('newProfileName').value='';
+      document.getElementById('newProfileExperience').value='';
+      document.getElementById('newProfileAchievements').value='';
+      document.getElementById('newProfileApproach').value='';
+      document.getElementById('btnCreateProfile').textContent='💾 プロフィールを保存';
+    }
+  }
+}
 
 // プロフィール選択時の処理
 document.getElementById('profileSelect').onchange=function(){
   var idx=this.value;
+  updateProfileActions();
   if(idx===''){
     return;
   }
@@ -560,6 +530,34 @@ document.getElementById('profileSelect').onchange=function(){
   document.getElementById('myExperience').value=p.experience;
   document.getElementById('myAchievements').value=p.achievements;
   document.getElementById('myApproach').value=p.approach;
+};
+
+// 新規プロフィール作成・編集の保存
+document.getElementById('btnCreateProfile').onclick=function(){
+  var name=document.getElementById('newProfileName').value.trim();
+  var exp=document.getElementById('newProfileExperience').value.trim();
+  if(!name||!exp){
+    alert('プロフィール名と経験・得意分野は必須です');
+    return;
+  }
+
+  var profile={
+    name:name,
+    experience:exp,
+    achievements:document.getElementById('newProfileAchievements').value.trim(),
+    approach:document.getElementById('newProfileApproach').value.trim()
+  };
+
+  if(currentEditingProfileId!==null){
+    profiles[currentEditingProfileId]=profile;
+    currentEditingProfileId=null;
+  }else{
+    profiles.push(profile);
+  }
+
+  saveProfiles();
+  switchProfileTab('tab-existing');
+  alert('プロフィールを保存しました');
 };
 
 // ===== ジャンル選択処理 =====
