@@ -119,6 +119,15 @@ input[type="file"]#imageInput{display:none;}
 .info-box{background:#f0f9ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;font-size:0.8rem;color:var(--text);margin-bottom:12px;}
 .info-box-title{font-weight:700;color:var(--primary);margin-bottom:4px;}
 
+.experience-level-section{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;padding:14px;background:var(--bg);border-radius:8px;border-left:4px solid var(--primary);}
+.experience-level-title{font-size:0.85rem;font-weight:700;color:var(--primary);margin-bottom:8px;}
+.experience-level-options{display:flex;flex-direction:column;gap:8px;}
+.experience-level-option{display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 10px;border-radius:6px;transition:background 0.2s;}
+.experience-level-option:hover{background:var(--white);}
+.experience-level-option input[type="checkbox"]{cursor:pointer;width:18px;height:18px;accent-color:var(--primary);}
+.experience-level-option label{cursor:pointer;flex:1;font-size:0.85rem;display:flex;align-items:center;gap:8px;}
+.experience-level-icon{font-size:1rem;}
+
 @media (prefers-color-scheme: dark) {
   body{background:#1a1d2e;}
   .card{background:#2d3142;}
@@ -276,6 +285,33 @@ input[type="file"]#imageInput{display:none;}
 
       <div style="font-size:0.85rem;font-weight:700;color:var(--primary);margin-top:16px;">👤 あなたの情報</div>
 
+      <div class="experience-level-section">
+        <div class="experience-level-title">📊 経験レベル（複数選択可）</div>
+        <div class="experience-level-options">
+          <div class="experience-level-option">
+            <input type="checkbox" id="expLevel0" value="未経験" class="experience-checkbox">
+            <label for="expLevel0">
+              <span class="experience-level-icon">📚</span>
+              <span>未経験</span>
+            </label>
+          </div>
+          <div class="experience-level-option">
+            <input type="checkbox" id="expLevel1" value="初心者" class="experience-checkbox">
+            <label for="expLevel1">
+              <span class="experience-level-icon">🎓</span>
+              <span>初心者</span>
+            </label>
+          </div>
+          <div class="experience-level-option">
+            <input type="checkbox" id="expLevel2" value="経験あり" class="experience-checkbox">
+            <label for="expLevel2">
+              <span class="experience-level-icon">⭐</span>
+              <span>経験あり</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
       <div class="field">
         <label>経験・得意分野 *</label>
         <textarea id="myExperience" rows="3" placeholder="例：営業支援ツール開発5年、React・Node.js経験、SaaS企業での勤務経験あり"></textarea>
@@ -370,6 +406,7 @@ var selectedGenre='',genreDetails={};
 var proposals=[],currentProposal=0;
 var selectedImage=null;
 var profiles=[],currentEditingProfileId=null;
+var experienceLevels=[];
 
 // ジャンル定義
 var genreConfig={
@@ -922,6 +959,15 @@ document.getElementById('btn2').onclick=function(){
   myExperience=e;myAchievements=document.getElementById('myAchievements').value.trim();
   myApproach=document.getElementById('myApproach').value.trim();
 
+  // 経験レベルの取得
+  experienceLevels=[];
+  document.querySelectorAll('.experience-checkbox:checked').forEach(function(checkbox){
+    experienceLevels.push(checkbox.value);
+  });
+  if(experienceLevels.length>0){
+    localStorage.setItem('experienceLevels',JSON.stringify(experienceLevels));
+  }
+
   // ジャンル詳細フィールドの値を読み込む
   var genreFields=document.querySelectorAll('.genre-field');
   genreDetails={};
@@ -957,6 +1003,12 @@ async function generateProposals(){
     }
   }
 
+  // 経験レベル情報をプロンプトに含める
+  var experienceInfo='';
+  if(experienceLevels.length>0){
+    experienceInfo='【経験レベル】\n'+experienceLevels.join('、')+'\n\n';
+  }
+
   var patternRules='【生成ルール】\n'
     +'5つのパターンを異なるアプローチで生成してください：\n'
     +'1. 強み重視型：あなたの強みを最初に打ち出す\n'
@@ -979,6 +1031,7 @@ async function generateProposals(){
     +'経験：'+myExperience+'\n'
     +'実績：'+myAchievements+'\n'
     +'得意なアプローチ：'+myApproach+'\n\n'
+    +experienceInfo
     +genreInfo
     +patternRules+'\n'
     +'以下のJSON形式で返してください：\n'
@@ -1132,6 +1185,24 @@ document.getElementById('btn4back').onclick=function(){goTo(2);};
 window.onload=function(){
   var saved=localStorage.getItem('apiKey');
   if(saved)document.getElementById('apiKey').value=saved;
+
+  // 保存された経験レベルを復元
+  var savedLevels=localStorage.getItem('experienceLevels');
+  if(savedLevels){
+    try{
+      experienceLevels=JSON.parse(savedLevels);
+      experienceLevels.forEach(function(level){
+        document.querySelectorAll('.experience-checkbox').forEach(function(checkbox){
+          if(checkbox.value===level){
+            checkbox.checked=true;
+          }
+        });
+      });
+    }catch(e){
+      console.error('経験レベルの復元に失敗:',e);
+    }
+  }
+
   setupImageUpload();
   setupGenreSelect();
   loadProfiles();
