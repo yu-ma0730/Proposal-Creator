@@ -715,7 +715,7 @@ async function extractFromImage(){
     var base64=selectedImage.data.split(',')[1];
     var mediaType=selectedImage.type||'image/jpeg';
 
-    var prompt='以下の画像を分析して、クライアント情報を以下の形式で日本語で抽出してください。存在しない情報は「記載なし」と記入してください。\n\n【抽出形式】\n事業内容・業種: [抽出内容]\n求めている成果・要件: [抽出内容]\n予算: [抽出内容]\n期間: [抽出内容]\n\nマークダウン形式は使用せず、プレーンテキストで返してください。';
+    var prompt='以下の画像を分析して、クライアント情報をJSON形式で日本語で抽出してください。存在しない情報は「記載なし」と記入してください。\n\n抽出すべき項目：\n1. 事業内容・業種（複数行可、詳細に）\n2. 求めている成果・要件（複数行可、具体的に）\n3. 予算\n4. 期間\n\nJSON形式で以下のように返してください（マークダウンなし）:\n{\n  "business": "事業内容",\n  "requirement": "求めている成果・要件",\n  "budget": "予算",\n  "period": "期間"\n}';
 
     var res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
@@ -776,21 +776,28 @@ async function extractFromImage(){
 }
 
 function parseAndFillExtractedData(text){
-  // 簡単なパーサー
-  var lines=text.split('\n');
   var data={};
 
-  lines.forEach(function(line){
-    if(line.includes('事業内容・業種:')){
-      data.business=line.split(':').slice(1).join(':').trim();
-    }else if(line.includes('求めている成果・要件:')){
-      data.requirement=line.split(':').slice(1).join(':').trim();
-    }else if(line.includes('予算:')){
-      data.budget=line.split(':').slice(1).join(':').trim();
-    }else if(line.includes('期間:')){
-      data.period=line.split(':').slice(1).join(':').trim();
-    }
-  });
+  try{
+    // JSON形式で抽出されたテキストをパース
+    var clean=text.replace(/```json|```/g,'').trim();
+    var json=JSON.parse(clean);
+    data=json;
+  }catch(e){
+    // JSONパース失敗時は旧形式のテキストパーサーを使用
+    var lines=text.split('\n');
+    lines.forEach(function(line){
+      if(line.includes('事業内容・業種:')){
+        data.business=line.split(':').slice(1).join(':').trim();
+      }else if(line.includes('求めている成果・要件:')){
+        data.requirement=line.split(':').slice(1).join(':').trim();
+      }else if(line.includes('予算:')){
+        data.budget=line.split(':').slice(1).join(':').trim();
+      }else if(line.includes('期間:')){
+        data.period=line.split(':').slice(1).join(':').trim();
+      }
+    });
+  }
 
   if(data.business && data.business!=='記載なし'){
     document.getElementById('clientBusiness').value=data.business;
@@ -803,6 +810,59 @@ function parseAndFillExtractedData(text){
   }
   if(data.period && data.period!=='記載なし'){
     document.getElementById('clientPeriod').value=data.period;
+  }
+
+  // ジャンルの自動判定
+  autoDetectGenre(data);
+}
+
+function autoDetectGenre(data){
+  // 合わせたテキストで判定
+  var text=(data.business||'')+(data.requirement||'');
+  text=text.toLowerCase();
+
+  // ジャンル判定キーワード
+  var genreKeywords={
+    'blog':['ブログ','記事','執筆','コンテンツ','SEO','ライティング'],
+    'youtube':['youtube','動画','台本','スクリプト','映像','撮影'],
+    'sns':['sns','twitter','インスタグラム','instagram','line','facebook','sns投稿','ツイート'],
+    'website':['web','ウェブサイト','サイト','ホームページ','hp','ランディングページ','lp'],
+    'system':['システム','開発','アプリ','アプリケーション','ソフトウェア','プログラム'],
+    'marketing':['マーケティング','施策','広告','キャンペーン','販促','プロモーション'],
+    'design':['デザイン','画像','ロゴ','バナー','グラフィック','ui','ux'],
+    'consulting':['コンサル','相談','指導','コンサルティング','アドバイス','戦略']
+  };
+
+  var genreScores={};
+  for(var genre in genreKeywords){
+    genreScores[genre]=0;
+    genreKeywords[genre].forEach(function(keyword){
+      if(text.includes(keyword)){
+        genreScores[genre]++;
+      }
+    });
+  }
+
+  // スコアが最も高いジャンルを選択
+  var maxScore=0;
+  var detectedGenre='';
+  for(var genre in genreScores){
+    if(genreScores[genre]>maxScore){
+      maxScore=genreScores[genre];
+      detectedGenre=genre;
+    }
+  }
+
+  // ジャンルを自動設定
+  if(detectedGenre){
+    var genreSelect=document.getElementById('genreSelect');
+    genreSelect.value=detectedGenre;
+
+    // イベントを発火させてジャンル詳細フィールドを表示
+    var event=new Event('change');
+    genreSelect.dispatchEvent(event);
+
+    console.log('自動検出されたジャンル:'+detectedGenre+'(スコア:'+maxScore+')');
   }
 }
 
