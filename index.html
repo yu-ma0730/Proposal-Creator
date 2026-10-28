@@ -789,19 +789,19 @@ function parseAndFillExtractedData(text){
     console.log('✓ JSON形式でパース成功:', data);
   }catch(e){
     console.log('❌ JSONパース失敗:', e.message);
-    // JSONパース失敗時は旧形式のテキストパーサーを使用
-    var lines=text.split('\n');
-    lines.forEach(function(line){
-      if(line.includes('事業内容・業種:')){
-        data.business=line.split(':').slice(1).join(':').trim();
-      }else if(line.includes('求めている成果・要件:')){
-        data.requirement=line.split(':').slice(1).join(':').trim();
-      }else if(line.includes('予算:')){
-        data.budget=line.split(':').slice(1).join(':').trim();
-      }else if(line.includes('期間:')){
-        data.period=line.split(':').slice(1).join(':').trim();
-      }
-    });
+    console.log('テキスト形式でのパースに切り替え...');
+
+    // JSONパース失敗時は正規表現ベースのテキストパーサーを使用
+    var businessMatch=text.match(/(?:事業内容|業種)[：:]\s*([^\n]+)/);
+    var requirementMatch=text.match(/(?:求めている成果|要件|成果・要件)[：:]\s*([^\n]+)/);
+    var budgetMatch=text.match(/予算[：:]\s*([^\n]+)/);
+    var periodMatch=text.match(/期間[：:]\s*([^\n]+)/);
+
+    if(businessMatch) data.business=businessMatch[1].trim();
+    if(requirementMatch) data.requirement=requirementMatch[1].trim();
+    if(budgetMatch) data.budget=budgetMatch[1].trim();
+    if(periodMatch) data.period=periodMatch[1].trim();
+
     console.log('✓ テキスト形式でパース:', data);
   }
 
