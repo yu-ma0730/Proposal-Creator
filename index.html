@@ -776,6 +776,9 @@ async function extractFromImage(){
 }
 
 function parseAndFillExtractedData(text){
+  console.log('=== 抽出テキスト ===');
+  console.log(text);
+
   var data={};
 
   try{
@@ -783,7 +786,9 @@ function parseAndFillExtractedData(text){
     var clean=text.replace(/```json|```/g,'').trim();
     var json=JSON.parse(clean);
     data=json;
+    console.log('✓ JSON形式でパース成功:', data);
   }catch(e){
+    console.log('❌ JSONパース失敗:', e.message);
     // JSONパース失敗時は旧形式のテキストパーサーを使用
     var lines=text.split('\n');
     lines.forEach(function(line){
@@ -797,19 +802,25 @@ function parseAndFillExtractedData(text){
         data.period=line.split(':').slice(1).join(':').trim();
       }
     });
+    console.log('✓ テキスト形式でパース:', data);
   }
 
+  console.log('=== フォーム入力開始 ===');
   if(data.business && data.business!=='記載なし'){
     document.getElementById('clientBusiness').value=data.business;
+    console.log('✓ 事業内容を入力:', data.business);
   }
   if(data.requirement && data.requirement!=='記載なし'){
     document.getElementById('clientRequirement').value=data.requirement;
+    console.log('✓ 要件を入力:', data.requirement);
   }
   if(data.budget && data.budget!=='記載なし'){
     document.getElementById('clientBudget').value=data.budget;
+    console.log('✓ 予算を入力:', data.budget);
   }
   if(data.period && data.period!=='記載なし'){
     document.getElementById('clientPeriod').value=data.period;
+    console.log('✓ 期間を入力:', data.period);
   }
 
   // ジャンルの自動判定
