@@ -1206,19 +1206,21 @@ function showProposal(idx){
     return;
   }
 
-  // ボタンのアクティブ状態を更新
+  // ボタンのアクティブ状態を更新（dataset.index を使用）
   var tabs=document.getElementById('proposalTabs');
   if(tabs){
     var buttons=tabs.querySelectorAll('.tab-btn');
     console.log('ボタン数:', buttons.length, 'アクティブにするボタン:', idx);
-    buttons.forEach(function(btn, i){
-      if(i===idx){
-        btn.classList.add('active');
-        console.log('ボタン', i, 'にアクティブクラス追加');
+    for(var i=0; i<buttons.length; i++){
+      var btnIdx=parseInt(buttons[i].dataset.index);
+      console.log('ボタン', i, '-> dataset.index:', btnIdx, 'idx:', idx, '一致:', (btnIdx===idx));
+      if(btnIdx===idx){
+        buttons[i].classList.add('active');
+        console.log('✓ ボタン', i, 'にアクティブクラス追加');
       }else{
-        btn.classList.remove('active');
+        buttons[i].classList.remove('active');
       }
-    });
+    }
   }
 
   var html='<div class="proposal-card">'
