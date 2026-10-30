@@ -1186,7 +1186,11 @@ async function generateProposals(){
   }
 }
 
+var renderProposalsCallCount=0;
 function renderProposals(){
+  renderProposalsCallCount++;
+  console.log('=== renderProposals 呼び出し #'+renderProposalsCallCount+' ===');
+  console.log('スタックトレース:', new Error().stack);
   var tabs=document.getElementById('proposalTabs');
   tabs.innerHTML='';
   console.log('renderProposals: proposals.length=', proposals.length);
