@@ -1079,9 +1079,12 @@ async function generateProposals(){
     document.getElementById('loading').classList.remove('show');
     goTo(4);
   }catch(err){
+    console.error('提案生成エラー:', err);
     document.getElementById('loading').classList.remove('show');
+    var errMsg='エラー：'+(err.message||'もう一度お試しください');
     document.getElementById('err3').style.display='block';
-    document.getElementById('err3').textContent='エラー：'+(err.message||'もう一度お試しください');
+    document.getElementById('err3').textContent=errMsg;
+    alert(errMsg);
     document.getElementById('btn3').style.display='block';
     document.getElementById('btn3').textContent='もう一度生成する';
     document.getElementById('btn3').onclick=generateProposals;
