@@ -988,7 +988,7 @@ async function generateProposals(){
 
   // ジャンル情報をプロンプトに含める
   var genreInfo='';
-  if(selectedGenre){
+  if(selectedGenre && genreConfig[selectedGenre]){
     var genreLabel=genreConfig[selectedGenre].name;
     genreInfo='【提案のジャンル】\n'+genreLabel+'\n';
     if(Object.keys(genreDetails).length>0){
@@ -1017,7 +1017,7 @@ async function generateProposals(){
     +'4. 信頼構築型：長期的なパートナーシップを提案\n'
     +'5. カスタマイズ重視型：クライアント特有のニーズに特化\n';
 
-  if(selectedGenre){
+  if(selectedGenre && genreConfig[selectedGenre]){
     patternRules+='上記5パターンは、'+genreConfig[selectedGenre].name+'のジャンルに特化した内容としてください。\n';
   }
 
