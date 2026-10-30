@@ -1096,10 +1096,17 @@ function renderProposals(){
 function showProposal(idx){
   currentProposal=idx;
   var p=proposals[idx];
+
+  if(!p){
+    console.error('提案が見つかりません:', idx);
+    document.getElementById('proposalContent').innerHTML='<div style="padding:20px;color:var(--warning);">提案を生成してください</div>';
+    return;
+  }
+
   var html='<div class="proposal-card">'
-    +'<div class="proposal-title">'+p.name+'</div>'
-    +'<div style="font-size:0.75rem;color:var(--muted);margin-bottom:10px;">📌 '+p.approach+'</div>'
-    +'<div class="proposal-text">'+p.proposal+'</div>';
+    +'<div class="proposal-title">'+(p.name||'提案')+' </div>'
+    +'<div style="font-size:0.75rem;color:var(--muted);margin-bottom:10px;">📌 '+(p.approach||'')+' </div>'
+    +'<div class="proposal-text">'+(p.proposal||'')+' </div>';
 
   if(p.scores){
     html+='<div class="scores">';
