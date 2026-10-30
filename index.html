@@ -788,6 +788,13 @@ async function extractFromImage(){
     var data=await res.json();
     console.log('=== APIレスポンス ===');
     console.log(data);
+    console.log('=== content 配列の詳細 ===');
+    console.log('content.length:', data.content?.length);
+    if(data.content){
+      data.content.forEach(function(c, i){
+        console.log('content['+i+']:', c.type, c.text ? c.text.substring(0, 100) : '(text なし)');
+      });
+    }
 
     if(data.error){
       throw new Error(data.error.message||'APIエラー');
@@ -798,7 +805,7 @@ async function extractFromImage(){
     }
 
     var extractedText=data.content[0].text||'';
-    console.log('=== 抽出されたテキスト ===');
+    console.log('=== 抽出されたテキスト（content[0].text）===');
     console.log(extractedText);
     parseAndFillExtractedData(extractedText);
 
