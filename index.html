@@ -1131,27 +1131,38 @@ async function generateProposals(){
       console.log('✓ 正規表現フォールバック処理を開始...');
 
       proposals=[];
-      var proposalMatches=clean.match(/\{[\s\S]*?"name"[\s\S]*?[\s\S]*?"approach"[\s\S]*?[\s\S]*?"proposal"[\s\S]*?\}/g);
+      var proposalMatches=clean.match(/\{[\s\S]*?"name"[\s\S]*?"proposal"[\s\S]*?\}/g);
       if(proposalMatches){
-        console.log('✓ 正規表現で', proposalMatches.length, '件の提案を検出');
+        console.log('✓ 正規表現で', proposalMatches.length, '件の提案オブジェクトを検出');
         proposalMatches.forEach(function(match, idx){
           try{
             var obj=JSON.parse(match);
             proposals.push(obj);
-            console.log('  提案', idx+1, '抽出成功:', obj.name);
-          }catch(e){
-            console.warn('  提案', idx+1, 'のJSON パースに失敗（スキップ）');
+            console.log('  提案', idx+1, '✓ パース成功:', obj.name);
+          }catch(parseErr){
+            console.warn('  提案', idx+1, '❌ JSON パース失敗、フィールド抽出開始');
+            var nameMatch=match.match(/"name"\s*:\s*"([^"\\]|\\.)*"/);
+            var approachMatch=match.match(/"approach"\s*:\s*"([^"\\]|\\.)*"/);
+            var proposalMatch=match.match(/"proposal"\s*:\s*"([^"\\]|\\.)*"/);
+
+            if(nameMatch && proposalMatch){
+              var name=nameMatch[0].match(/"name"\s*:\s*"(.*)"/)[1];
+              var approach=approachMatch ? approachMatch[0].match(/"approach"\s*:\s*"(.*)"/)[1] : '未設定';
+              var proposal=proposalMatch[0].match(/"proposal"\s*:\s*"(.*)"/)[1];
+              proposals.push({name:name, approach:approach, proposal:proposal});
+              console.log('  提案', idx+1, '✓ フィールド抽出成功:', name);
+            }
           }
         });
       }
 
       console.log('✓ フォールバック処理完了:', proposals.length, '件の提案を抽出');
       if(proposals.length===0){
-        console.warn('⚠️提案が0件のため、ダミーオブジェクトを作成');
+        console.warn('⚠️提案が0件のため、最小提案を作成');
         proposals=[{
           name: '提案1',
-          approach: 'JSON パース失敗のため詳細不可',
-          proposal: 'コンソールを確認してください'
+          approach: '提案生成に失敗しました',
+          proposal: 'APIの応答にエラーがあります。もう一度生成してください。'
         }];
       }
     }
