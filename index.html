@@ -1158,11 +1158,12 @@ function renderProposals(){
 }
 
 function showProposal(idx){
+  console.log('showProposal called with idx:', idx);
   currentProposal=idx;
   var p=proposals[idx];
 
   if(!p){
-    console.error('提案が見つかりません:', idx);
+    console.error('提案が見つかりません:', idx, 'proposals.length:', proposals.length);
     document.getElementById('proposalContent').innerHTML='<div style="padding:20px;color:var(--warning);">提案を生成してください</div>';
     return;
   }
@@ -1171,9 +1172,11 @@ function showProposal(idx){
   var tabs=document.getElementById('proposalTabs');
   if(tabs){
     var buttons=tabs.querySelectorAll('.tab-btn');
+    console.log('ボタン数:', buttons.length, 'アクティブにするボタン:', idx);
     buttons.forEach(function(btn, i){
       if(i===idx){
         btn.classList.add('active');
+        console.log('ボタン', i, 'にアクティブクラス追加');
       }else{
         btn.classList.remove('active');
       }
