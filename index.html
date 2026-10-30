@@ -786,11 +786,20 @@ async function extractFromImage(){
     });
 
     var data=await res.json();
+    console.log('=== APIレスポンス ===');
+    console.log(data);
+
     if(data.error){
       throw new Error(data.error.message||'APIエラー');
     }
 
+    if(!data.content || !data.content[0]){
+      throw new Error('APIレスポンスが不正です：content が空です');
+    }
+
     var extractedText=data.content[0].text||'';
+    console.log('=== 抽出されたテキスト ===');
+    console.log(extractedText);
     parseAndFillExtractedData(extractedText);
 
     document.getElementById('extractionLoading').classList.remove('show');
