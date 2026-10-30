@@ -1131,22 +1131,28 @@ async function generateProposals(){
       console.log('✓ 正規表現フォールバック処理を開始...');
 
       proposals=[];
-      var proposalMatches=clean.match(/\{[^{}]*"name":[^{}]*"approach":[^{}]*"proposal":[^{}]*\}/g);
+      var proposalMatches=clean.match(/\{[\s\S]*?"name"[\s\S]*?[\s\S]*?"approach"[\s\S]*?[\s\S]*?"proposal"[\s\S]*?\}/g);
       if(proposalMatches){
-        console.log('✓ 正規表現で', proposalMatches.length, '件の提案を抽出');
+        console.log('✓ 正規表現で', proposalMatches.length, '件の提案を検出');
         proposalMatches.forEach(function(match, idx){
           try{
             var obj=JSON.parse(match);
             proposals.push(obj);
-            console.log('  提案', idx+1, ':', obj.name);
+            console.log('  提案', idx+1, '抽出成功:', obj.name);
           }catch(e){
-            console.warn('  提案', idx+1, 'のパースに失敗（スキップ）');
+            console.warn('  提案', idx+1, 'のJSON パースに失敗（スキップ）');
           }
         });
       }
 
+      console.log('✓ フォールバック処理完了:', proposals.length, '件の提案を抽出');
       if(proposals.length===0){
-        throw new Error('提案の抽出に失敗しました');
+        console.warn('⚠️提案が0件のため、ダミーオブジェクトを作成');
+        proposals=[{
+          name: '提案1',
+          approach: 'JSON パース失敗のため詳細不可',
+          proposal: 'コンソールを確認してください'
+        }];
       }
     }
     console.log('提案パース完了:', proposals.length, '件');
