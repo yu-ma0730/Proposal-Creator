@@ -1127,15 +1127,27 @@ async function generateProposals(){
     try{
       proposals=JSON.parse(clean);
     }catch(parseErr){
-      console.error('JSON パースエラー詳細:', parseErr.message);
-      console.log('clean テキストの長さ:', clean.length);
-      console.log('問題の箇所付近:');
-      var pos=parseErr.message.match(/position (\d+)/);
-      if(pos){
-        var idx=parseInt(pos[1]);
-        console.log(clean.substring(Math.max(0, idx-100), idx+100));
+      console.error('❌ JSON パース失敗:', parseErr.message);
+      console.log('✓ 正規表現フォールバック処理を開始...');
+
+      proposals=[];
+      var proposalMatches=clean.match(/\{[^{}]*"name":[^{}]*"approach":[^{}]*"proposal":[^{}]*\}/g);
+      if(proposalMatches){
+        console.log('✓ 正規表現で', proposalMatches.length, '件の提案を抽出');
+        proposalMatches.forEach(function(match, idx){
+          try{
+            var obj=JSON.parse(match);
+            proposals.push(obj);
+            console.log('  提案', idx+1, ':', obj.name);
+          }catch(e){
+            console.warn('  提案', idx+1, 'のパースに失敗（スキップ）');
+          }
+        });
       }
-      throw parseErr;
+
+      if(proposals.length===0){
+        throw new Error('提案の抽出に失敗しました');
+      }
     }
     console.log('提案パース完了:', proposals.length, '件');
 
