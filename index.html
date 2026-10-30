@@ -1095,11 +1095,20 @@ async function generateProposals(){
     }
 
     if(data.error)throw new Error(data.error.message||'APIエラー');
-    if(!data.content || !data.content[0])throw new Error('レスポンスが不正です');
+    if(!data.content || data.content.length===0)throw new Error('レスポンスが不正です');
 
-    var text=data.content[0].text||'';
+    // text フィールドを持つ要素を探す（Extended Thinking の場合、content[0] は thinking で、text は content[1] にある）
+    var text='';
+    for(var i=0; i<data.content.length; i++){
+      if(data.content[i].type==='text' && data.content[i].text){
+        text=data.content[i].text;
+        console.log('text フィールドを見つけた: content['+i+']');
+        break;
+      }
+    }
+
     if(!text){
-      throw new Error('提案テキストが空です。content[0].text が undefined');
+      throw new Error('提案テキストが見つかりません');
     }
     console.log('提案テキスト:', text.substring(0, 200));
 
