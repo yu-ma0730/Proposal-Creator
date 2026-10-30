@@ -1169,6 +1169,9 @@ async function generateProposals(){
     console.log('提案パース完了:', proposals.length, '件');
 
     renderProposals();
+    if(proposals.length > 0){
+      showProposal(0);
+    }
     document.getElementById('loading').classList.remove('show');
     goTo(4);
   }catch(err){
