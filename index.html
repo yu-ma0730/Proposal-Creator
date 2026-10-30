@@ -1083,12 +1083,25 @@ async function generateProposals(){
     console.log('APIレスポンス受信');
     var data=await res.json();
     console.log('レスポンスパース完了:', data);
+    console.log('=== 提案生成の content 配列詳細 ===');
+    console.log('content.length:', data.content?.length);
+    if(data.content){
+      data.content.forEach(function(c, i){
+        console.log('content['+i+']:', c.type, c.text ? '(text あり)' : '(text なし)');
+        if(c.text){
+          console.log('  テキスト最初の100文字:', c.text.substring(0, 100));
+        }
+      });
+    }
 
     if(data.error)throw new Error(data.error.message||'APIエラー');
     if(!data.content || !data.content[0])throw new Error('レスポンスが不正です');
 
-    var text=data.content[0].text||'[]';
-    console.log('抽出テキスト:', text.substring(0, 200));
+    var text=data.content[0].text||'';
+    if(!text){
+      throw new Error('提案テキストが空です。content[0].text が undefined');
+    }
+    console.log('提案テキスト:', text.substring(0, 200));
 
     var clean=text.replace(/```json|```/g,'').trim();
     proposals=JSON.parse(clean);
