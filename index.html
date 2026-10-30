@@ -1119,7 +1119,24 @@ async function generateProposals(){
     console.log('提案テキスト:', text.substring(0, 200));
 
     var clean=text.replace(/```json|```/g,'').trim();
-    proposals=JSON.parse(clean);
+    console.log('=== パース前のテキスト（最初の500文字） ===');
+    console.log(clean.substring(0, 500));
+    console.log('=== パース前のテキスト（最後の500文字） ===');
+    console.log(clean.substring(clean.length - 500));
+
+    try{
+      proposals=JSON.parse(clean);
+    }catch(parseErr){
+      console.error('JSON パースエラー詳細:', parseErr.message);
+      console.log('clean テキストの長さ:', clean.length);
+      console.log('問題の箇所付近:');
+      var pos=parseErr.message.match(/position (\d+)/);
+      if(pos){
+        var idx=parseInt(pos[1]);
+        console.log(clean.substring(Math.max(0, idx-100), idx+100));
+      }
+      throw parseErr;
+    }
     console.log('提案パース完了:', proposals.length, '件');
 
     renderProposals();
