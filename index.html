@@ -1161,6 +1161,19 @@ function showProposal(idx){
     return;
   }
 
+  // ボタンのアクティブ状態を更新
+  var tabs=document.getElementById('proposalTabs');
+  if(tabs){
+    var buttons=tabs.querySelectorAll('.tab-btn');
+    buttons.forEach(function(btn, i){
+      if(i===idx){
+        btn.classList.add('active');
+      }else{
+        btn.classList.remove('active');
+      }
+    });
+  }
+
   var html='<div class="proposal-card">'
     +'<div class="proposal-title">'+(p.name||'提案')+' </div>'
     +'<div style="font-size:0.75rem;color:var(--muted);margin-bottom:10px;">📌 '+(p.approach||'')+' </div>'
