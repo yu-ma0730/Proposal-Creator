@@ -1201,6 +1201,7 @@ function renderProposals(){
     btn.className='tab-btn'+(i===0?' active':'');
     btn.textContent=''+(i+1);
     btn.id='proposal-btn-'+i;
+    btn.dataset.index=i;
     (function(index){
       btn.addEventListener('click', function(){
         showProposal(index);
@@ -1256,8 +1257,6 @@ function showProposal(idx){
   html+='</div>';
   document.getElementById('proposalContent').innerHTML=html;
 
-  var tabs=document.querySelectorAll('.tab-btn');
-  tabs.forEach(function(t,i){t.className='tab-btn'+(i===idx?' active':'');});
   document.getElementById('evalSection').style.display='block';
 }
 
