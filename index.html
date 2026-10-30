@@ -1055,6 +1055,9 @@ async function generateProposals(){
     +'注意：JSON形式のみ返してください。マークダウンコードブロック記号は使用しないでください。';
 
   try{
+    console.log('提案生成開始...');
+    console.log('プロンプト長:', prompt.length);
+
     var res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{
@@ -1070,16 +1073,26 @@ async function generateProposals(){
       })
     });
 
+    console.log('APIレスポンス受信');
     var data=await res.json();
+    console.log('レスポンスパース完了:', data);
+
     if(data.error)throw new Error(data.error.message||'APIエラー');
+    if(!data.content || !data.content[0])throw new Error('レスポンスが不正です');
+
     var text=data.content[0].text||'[]';
+    console.log('抽出テキスト:', text.substring(0, 200));
+
     var clean=text.replace(/```json|```/g,'').trim();
     proposals=JSON.parse(clean);
+    console.log('提案パース完了:', proposals.length, '件');
+
     renderProposals();
     document.getElementById('loading').classList.remove('show');
     goTo(4);
   }catch(err){
     console.error('提案生成エラー:', err);
+    console.error('エラースタック:', err.stack);
     document.getElementById('loading').classList.remove('show');
     var errMsg='エラー：'+(err.message||'もう一度お試しください');
     document.getElementById('err3').style.display='block';
