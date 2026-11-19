@@ -391,11 +391,45 @@ input[type="file"]#imageInput{display:none;}
       <button class="btn btn-primary" id="btnCopy" style="margin-top:12px;">📋 完成版をコピー</button>
       <p id="copyStatus" style="font-size:0.75rem;color:var(--success);text-align:center;display:none;margin-top:8px;">✓ コピーしました</p>
 
+      <button class="btn btn-secondary" id="btnToEval" style="margin-top:8px;">📊 評価・改善へ</button>
+
       <hr class="divider">
       <button class="btn btn-ghost" id="btn4back">← 戻る</button>
     </div>
   </div>
 
+  <div class="page" id="page5">
+    <div class="card">
+      <div class="card-title">📊 評価・改善</div>
+      <div class="card-desc">複数のAIで提案文を評価し、改善ポイントを確認</div>
+
+      <!-- 提案文表示 -->
+      <div style="background:var(--bg);border-radius:8px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--primary);margin-bottom:10px;">提案文</div>
+        <div id="page5ProposalText" style="font-size:0.82rem;line-height:1.8;color:var(--text);white-space:pre-wrap;max-height:200px;overflow-y:auto;"></div>
+      </div>
+
+      <!-- AI評価結果 -->
+      <div id="page5Evaluations" style="margin-bottom:16px;">
+        <!-- Claude評価 -->
+        <div style="background:var(--bg);border-radius:8px;padding:14px;margin-bottom:12px;">
+          <div style="font-size:0.8rem;font-weight:700;color:#2563eb;margin-bottom:8px;">🤖 Claude の評価</div>
+          <div id="page5ClaudeEval" style="font-size:0.78rem;color:var(--text);line-height:1.6;"></div>
+        </div>
+
+        <!-- Gemini評価 -->
+        <div style="background:var(--bg);border-radius:8px;padding:14px;">
+          <div style="font-size:0.8rem;font-weight:700;color:#34a853;margin-bottom:8px;">🌐 Gemini の評価</div>
+          <div id="page5GeminiEval" style="font-size:0.78rem;color:var(--text);line-height:1.6;">（Gemini APIキー取得後に実装）</div>
+        </div>
+      </div>
+
+      <!-- アクションボタン -->
+      <button class="btn btn-secondary" id="btnCopyImprovements" style="margin-bottom:8px;">📋 改善ポイントをコピー</button>
+      <button class="btn btn-primary" id="btnAutoRegenerate" style="margin-bottom:8px;">✨ 自動再生成</button>
+      <button class="btn btn-ghost" id="btn5back">← 戻る</button>
+    </div>
+  </div>
 
 </div>
 
@@ -1319,9 +1353,126 @@ document.getElementById('btnCopy').onclick=function(){
   });
 };
 
+document.getElementById('btnToEval').onclick=function(){
+  goToEvaluation();
+};
+
 document.getElementById('btn2back').onclick=function(){goTo(2);};
 document.getElementById('btn3back').onclick=function(){goTo(2);};
 document.getElementById('btn4back').onclick=function(){goTo(2);};
+document.getElementById('btn5back').onclick=function(){goTo(4);};
+
+// ページ5：評価・改善
+function goToEvaluation(){
+  if(proposals.length===0){
+    alert('提案文を生成してください');
+    return;
+  }
+
+  document.getElementById('page5ProposalText').textContent=proposals[currentProposal].proposal;
+  document.getElementById('page5ClaudeEval').textContent='評価を取得しています...';
+  document.getElementById('page5GeminiEval').textContent='準備中...';
+
+  goTo(5);
+  evaluateProposal();
+}
+
+function evaluateProposal(){
+  // Claude で評価（現在の提案文を分析）
+  evaluateWithClaude();
+}
+
+function evaluateWithClaude(){
+  var evaluationPrompt='以下の提案文を、以下の視点から評価してください。JSON形式で返してください。\n\n【提案文】\n'+proposals[currentProposal].proposal+'\n\n【評価視点】\n1. 説得力：クライアントを納得させる力\n2. 実現可能性：実装できるか、現実的か\n3. カスタマイズ度：クライアント特有のニーズへの対応度\n4. 信頼性：提案者の信頼性を感じさせるか\n\n以下のJSON形式で返してください：\n{\n  "summary":"1文での全体評価",\n  "strengths":"強み（3つまで）",\n  "improvements":"具体的な改善提案"\n}';
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-haiku-4-5-20251001',
+      max_tokens:800,
+      messages:[{role:'user',content:evaluationPrompt}]
+    })
+  }).then(function(res){return res.json();}).then(function(data){
+    if(data.error)throw new Error(data.error.message);
+
+    var text='';
+    for(var i=0;i<data.content.length;i++){
+      if(data.content[i].type==='text'){
+        text=data.content[i].text;
+        break;
+      }
+    }
+
+    try{
+      var clean=text.replace(/```json|```/g,'').trim();
+      var eval=JSON.parse(clean);
+      document.getElementById('page5ClaudeEval').textContent='📌 '+eval.summary+'\n\n強み:\n'+eval.strengths+'\n\n改善提案:\n'+eval.improvements;
+    }catch(e){
+      document.getElementById('page5ClaudeEval').textContent=text;
+    }
+  }).catch(function(err){
+    document.getElementById('page5ClaudeEval').textContent='エラー：'+err.message;
+  });
+}
+
+document.getElementById('btnCopyImprovements').onclick=function(){
+  var claudeEval=document.getElementById('page5ClaudeEval').textContent;
+  var text='【Claude による評価】\n'+claudeEval+'\n\n【改善後の提案文】\n（下記に改善案を反映した提案文を入力してください）';
+  navigator.clipboard.writeText(text).then(function(){
+    alert('改善ポイントをコピーしました。ページ4に戻って反映してください。');
+  });
+};
+
+document.getElementById('btnAutoRegenerate').onclick=async function(){
+  var improvementPrompt='以下の評価を踏まえて、提案文を改善してください。改善版の提案文のみを返してください。\n\n【元の提案文】\n'+proposals[currentProposal].proposal+'\n\n【評価】\n'+document.getElementById('page5ClaudeEval').textContent;
+
+  try{
+    this.disabled=true;
+    this.textContent='⏳ 再生成中...';
+
+    var res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-opus-5-5',
+        max_tokens:1500,
+        messages:[{role:'user',content:improvementPrompt}]
+      })
+    });
+
+    var data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+
+    var text='';
+    for(var i=0;i<data.content.length;i++){
+      if(data.content[i].type==='text'){
+        text=data.content[i].text;
+        break;
+      }
+    }
+
+    proposals[currentProposal].proposal=text.trim();
+    document.getElementById('page5ProposalText').textContent=text.trim();
+    alert('提案文を改善しました！');
+    this.disabled=false;
+    this.textContent='✨ 自動再生成';
+  }catch(err){
+    alert('エラー：'+err.message);
+    this.disabled=false;
+    this.textContent='✨ 自動再生成';
+  }
+};
 
 window.onload=function(){
   var saved=localStorage.getItem('apiKey');
