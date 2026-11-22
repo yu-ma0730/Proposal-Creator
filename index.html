@@ -156,7 +156,12 @@ input[type="file"]#imageInput{display:none;}
         <label>Claude APIキー</label>
         <input type="password" id="apiKey" placeholder="sk-ant-...">
       </div>
-      <p class="err" id="err1">※ APIキーを入力してください</p>
+      <div class="field" style="margin-top:12px;">
+        <label>Gemini APIキー（オプション）</label>
+        <input type="password" id="geminiKey" placeholder="AIzaSy...">
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:4px;">※ 複数AI評価を使う場合のみ入力してください</div>
+      </div>
+      <p class="err" id="err1">※ Claude APIキーを入力してください</p>
       <button class="btn btn-primary" id="btn1">次へ →</button>
     </div>
   </div>
@@ -434,7 +439,7 @@ input[type="file"]#imageInput{display:none;}
 </div>
 
 <script>
-var apiKey='',clientBusiness='',clientRequirement='',clientBudget='',clientPeriod='';
+var apiKey='',geminiKey='',clientBusiness='',clientRequirement='',clientBudget='',clientPeriod='';
 var myExperience='',myAchievements='',myApproach='';
 var selectedGenre='',genreDetails={};
 var proposals=[],currentProposal=0;
@@ -1004,6 +1009,13 @@ document.getElementById('btn1').onclick=function(){
   var key=document.getElementById('apiKey').value.trim();
   if(!key){document.getElementById('err1').style.display='block';return;}
   apiKey=key;
+
+  var gkey=document.getElementById('geminiKey').value.trim();
+  if(gkey){
+    geminiKey=gkey;
+    localStorage.setItem('geminiKey',geminiKey);
+  }
+
   localStorage.setItem('apiKey',apiKey);
   document.getElementById('err1').style.display='none';
   goTo(2);
@@ -1380,6 +1392,11 @@ function goToEvaluation(){
 function evaluateProposal(){
   // Claude で評価（現在の提案文を分析）
   evaluateWithClaude();
+
+  // Gemini キーがあれば Gemini で評価
+  if(geminiKey){
+    evaluateWithGemini();
+  }
 }
 
 function evaluateWithClaude(){
@@ -1418,6 +1435,46 @@ function evaluateWithClaude(){
     }
   }).catch(function(err){
     document.getElementById('page5ClaudeEval').textContent='エラー：'+err.message;
+  });
+}
+
+function evaluateWithGemini(){
+  if(!geminiKey){
+    document.getElementById('page5GeminiEval').textContent='Gemini APIキーが設定されていません';
+    return;
+  }
+
+  var evaluationPrompt='以下の提案文を、以下の視点から評価してください。JSON形式で返してください。\n\n【提案文】\n'+proposals[currentProposal].proposal+'\n\n【評価視点】\n1. 説得力：クライアントを納得させる力\n2. 実現可能性：実装できるか、現実的か\n3. カスタマイズ度：クライアント特有のニーズへの対応度\n4. 信頼性：提案者の信頼性を感じさせるか\n\n以下のJSON形式で返してください：\n{\n  "summary":"1文での全体評価",\n  "strengths":"強み（3つまで）",\n  "improvements":"具体的な改善提案"\n}';
+
+  fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+encodeURIComponent(geminiKey),{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json'
+    },
+    body:JSON.stringify({
+      contents:[{
+        parts:[{text:evaluationPrompt}]
+      }]
+    })
+  }).then(function(res){return res.json();}).then(function(data){
+    if(data.error){
+      throw new Error(data.error.message||'Gemini API エラー');
+    }
+
+    var text='';
+    if(data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts){
+      text=data.candidates[0].content.parts[0].text;
+    }
+
+    try{
+      var clean=text.replace(/```json|```/g,'').trim();
+      var eval=JSON.parse(clean);
+      document.getElementById('page5GeminiEval').textContent='📌 '+eval.summary+'\n\n強み:\n'+eval.strengths+'\n\n改善提案:\n'+eval.improvements;
+    }catch(e){
+      document.getElementById('page5GeminiEval').textContent=text;
+    }
+  }).catch(function(err){
+    document.getElementById('page5GeminiEval').textContent='エラー：'+err.message;
   });
 }
 
@@ -1477,6 +1534,9 @@ document.getElementById('btnAutoRegenerate').onclick=async function(){
 window.onload=function(){
   var saved=localStorage.getItem('apiKey');
   if(saved)document.getElementById('apiKey').value=saved;
+
+  var savedGemini=localStorage.getItem('geminiKey');
+  if(savedGemini)document.getElementById('geminiKey').value=savedGemini;
 
   // 保存された経験レベルを復元
   var savedLevels=localStorage.getItem('experienceLevels');
