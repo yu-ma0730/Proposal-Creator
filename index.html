@@ -226,44 +226,53 @@ input[type="file"]#imageInput{display:none;}
         </div>
       </div>
 
-      <!-- 画像からの自動抽出セクション -->
-      <div style="font-size:0.85rem;font-weight:700;color:var(--primary);margin-top:16px;">🖼️ 画像からの自動抽出（オプション）</div>
-
-      <div class="info-box">
-        <div class="info-box-title">💡 ヒント</div>
-        クライアント情報の画像（スクリーンショット、メール、ドキュメント等）をアップロードすると、Claude Visionが自動で抽出します
+      <!-- クライアント情報入力タブ -->
+      <div class="proposal-tabs" style="margin-bottom:16px;">
+        <button class="tab-btn active" data-tab="tab-image" onclick="switchInputTab('tab-image')">📸 画像から抽出</button>
+        <button class="tab-btn" data-tab="tab-manual" onclick="switchInputTab('tab-manual')">✏️ 直接入力</button>
       </div>
 
-      <div class="image-upload-section" id="uploadArea">
-        <div class="upload-icon">📸</div>
-        <div class="upload-text">クライアント情報の画像を選択またはドラッグ&ドロップ</div>
-        <div class="upload-hint">対応形式: JPG, PNG, WebP, GIF | 最大サイズ: 5MB</div>
-        <input type="file" id="imageInput" accept="image/*">
-      </div>
+      <!-- タブ1：画像から抽出 -->
+      <div id="tab-image" class="input-tab-content" style="display:block;">
+        <div class="info-box">
+          <div class="info-box-title">💡 ヒント</div>
+          クライアント情報の画像（スクリーンショット、メール、ドキュメント等）をアップロードすると、Claude Visionが自動で抽出します
+        </div>
 
-      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-        <button class="btn btn-ghost" id="btnPaste" style="flex:1;min-width:120px;font-size:0.85rem;">📋 Ctrl+V でペースト</button>
-      </div>
+        <div class="image-upload-section" id="uploadArea">
+          <div class="upload-icon">📸</div>
+          <div class="upload-text">クライアント情報の画像を選択またはドラッグ&ドロップ</div>
+          <div class="upload-hint">対応形式: JPG, PNG, WebP, GIF | 最大サイズ: 5MB</div>
+          <input type="file" id="imageInput" accept="image/*">
+        </div>
 
-      <div class="image-preview" id="imagePreview">
-        <img id="previewImg" alt="プレビュー">
-        <div class="extraction-controls">
-          <button class="btn btn-secondary" id="btnExtract">🤖 情報を抽出</button>
-          <button class="btn btn-ghost" id="btnClearImage">✕ 削除</button>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <button class="btn btn-ghost" id="btnPaste" style="flex:1;min-width:120px;font-size:0.85rem;">📋 Ctrl+V でペースト</button>
+        </div>
+
+        <div class="image-preview" id="imagePreview">
+          <img id="previewImg" alt="プレビュー">
+          <div class="extraction-controls">
+            <button class="btn btn-secondary" id="btnExtract">🤖 情報を抽出</button>
+            <button class="btn btn-ghost" id="btnClearImage">✕ 削除</button>
+          </div>
+        </div>
+
+        <div class="extraction-result" id="extractionResult">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--success);margin-bottom:8px;">✓ 抽出完了</div>
+          <div id="extractionMessage" style="font-size:0.8rem;color:var(--muted);"></div>
+        </div>
+
+        <div class="loading" id="extractionLoading">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <span>画像を解析中...</span>
         </div>
       </div>
 
-      <div class="extraction-result" id="extractionResult">
-        <div style="font-size:0.8rem;font-weight:700;color:var(--success);margin-bottom:8px;">✓ 抽出完了</div>
-        <div id="extractionMessage" style="font-size:0.8rem;color:var(--muted);"></div>
+      <!-- タブ2：直接入力 -->
+      <div id="tab-manual" class="input-tab-content" style="display:none;background:var(--bg);border-radius:8px;padding:14px;border-left:4px solid var(--primary);">
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">下記に情報を入力してください</div>
       </div>
-
-      <div class="loading" id="extractionLoading">
-        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-        <span>画像を解析中...</span>
-      </div>
-
-      <hr class="divider" style="margin-top:16px;">
 
       <div style="font-size:0.85rem;font-weight:700;color:var(--primary);margin-top:16px;">📋 クライアント情報</div>
 
@@ -483,6 +492,17 @@ var genreConfig={
     {id:'expectedResult',label:'期待される成果',placeholder:'例：売上向上、組織効率化、戦略立案 など'}
   ]}
 };
+
+// ===== タブ切り替え =====
+function switchInputTab(tabName){
+  var tabs=document.querySelectorAll('.input-tab-content');
+  tabs.forEach(function(tab){tab.style.display='none';});
+  document.getElementById(tabName).style.display='block';
+
+  var btns=document.querySelectorAll('[data-tab]');
+  btns.forEach(function(btn){btn.classList.remove('active');});
+  document.querySelector('[data-tab="'+tabName+'"]').classList.add('active');
+}
 
 // ===== プロフィール管理機能 =====
 function loadProfiles(){
@@ -1081,19 +1101,31 @@ async function generateProposals(){
     experienceInfo='【経験レベル】\n'+experienceLevels.join('、')+'\n\n';
   }
 
-  var patternRules='【生成ルール】\n'
-    +'5つのパターンを異なるアプローチで生成してください：\n'
-    +'1. 強み重視型：あなたの強みを最初に打ち出す\n'
-    +'2. 課題解決型：クライアントの課題を深掘りして解決策を提示\n'
-    +'3. 実績重視型：具体的な成功事例を活用\n'
-    +'4. 信頼構築型：長期的なパートナーシップを提案\n'
-    +'5. カスタマイズ重視型：クライアント特有のニーズに特化\n';
+  var patternRules='【プロフェッショナルな提案の生成ルール】\n'
+    +'以下5つの異なるアプローチで提案を生成してください。\n'
+    +'各提案は、プロが実際に行うようなリサーチと分析に基づいた内容にしてください。\n\n'
+    +'1. 業界分析型：クライアントの業界特性を考慮した深い提案\n'
+    +'   - 業界のトレンド、課題、機会を認識した上での提案\n'
+    +'   - 競合他社との差別化方法を明確にする\n\n'
+    +'2. 課題深掘り型：クライアントの表面的な要件の背後にある本質的な課題を解決する提案\n'
+    +'   - 「要件の背景は何か」を推察し、根本原因を解決する\n'
+    +'   - 単なる作業提供ではなく、ビジネス成果につなぐ方法を提示\n\n'
+    +'3. ROI重視型：投資対効果を明確に示す提案\n'
+    +'   - 実装により期待できる具体的な成果・数値目標を提示\n'
+    +'   - コスト対効果を明確にして信頼性を高める\n\n'
+    +'4. 実績活用型：具体的な成功事例を活用した説得力のある提案\n'
+    +'   - 類似案件での成功パターンを参考にした提案\n'
+    +'   - 長期的なパートナーシップの価値を示す\n\n'
+    +'5. カスタマイズ型：クライアント特有のニーズに完全に特化した提案\n'
+    +'   - 予算・期間・業界を踏まえた独自の解決策\n'
+    +'   - 他社にはできない、このクライアントだけの提案\n';
 
   if(selectedGenre && genreConfig[selectedGenre]){
-    patternRules+='上記5パターンは、'+genreConfig[selectedGenre].name+'のジャンルに特化した内容としてください。\n';
+    patternRules+='上記5パターンは、すべて'+genreConfig[selectedGenre].name+'のジャンルに特化した内容としてください。\n';
   }
 
-  var prompt='以下の情報に基づいて、クライアントに提出する提案文を5パターン生成してください。\n\n'
+  var prompt='以下の情報に基づいて、プロフェッショナルな提案文を5パターン生成してください。\n'
+    +'各提案は、業界知識・競合分析・ROI視点を含めた「プロのアプローチ」に基づいてください。\n\n'
     +'【クライアント情報】\n'
     +'事業内容：'+clientBusiness+'\n'
     +'要件：'+clientRequirement+'\n'
@@ -1106,12 +1138,18 @@ async function generateProposals(){
     +experienceInfo
     +genreInfo
     +patternRules+'\n'
+    +'【提案文の要件】\n'
+    +'- 相手の業界・課題を理解した上での提案\n'
+    +'- 単なる作業内容ではなく、ビジネス成果を強調\n'
+    +'- ROI・期待効果を具体的に示す（可能な限り数値化）\n'
+    +'- 長期的な価値提供を示唆\n'
+    +'- 信頼感と専門性を感じさせる表現\n\n'
     +'以下のJSON形式で返してください：\n'
     +'[\n'
     +'  {\n'
     +'    "name": "パターン名",\n'
     +'    "approach": "アプローチの説明（1文）",\n'
-    +'    "proposal": "提案文本文（300～500字の自然な日本語提案文）",\n'
+    +'    "proposal": "提案文本文（300～500字の自然な日本語提案文。プロのリサーチと分析が反映されたもの）",\n'
     +'    "scores": {"説得力":4,"実現可能性":5,"カスタマイズ度":3,"信頼性":4,"実装スピード":5}\n'
     +'  }\n'
     +']\n\n'
